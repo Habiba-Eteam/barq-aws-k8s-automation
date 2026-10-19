@@ -1,0 +1,34 @@
+# Environment Variables & Secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+.aws/
+
+# Terraform
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+*.tfplan
+crash.log
+.terraform.lock.hcl.backup
+
+# Ansible
+*.retry
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# SSH
+.ssh/
+
+# IDE
+.vscode/
+
+# Generated files (contain real IPs)
+ansible/inventory/hosts.ini
+terraform/root/inventory.generated.ini

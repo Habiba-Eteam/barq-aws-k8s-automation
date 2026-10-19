@@ -1,0 +1,31 @@
+# Copy to terraform.tfvars (git-ignored) and adjust. NEVER commit real values.
+aws_region = "eu-central-1"
+
+vpc_cidr = "10.0.0.0/16"
+
+public_subnet_cidr = "10.0.1.0/24"
+public_az          = "eu-central-1a"
+
+private_db_subnet_1_cidr = "10.0.2.0/24"
+private_db_subnet_2_cidr = "10.0.3.0/24"
+
+private_db_az_1 = "eu-central-1a"
+private_db_az_2 = "eu-central-1b"
+
+# Your public IP: curl -s ifconfig.me  ->  "<ip>/32"  (never 0.0.0.0/0)
+allowed_ssh_cidr = "203.0.113.10/32"
+
+# Name of an EXISTING EC2 key pair (see README, step 0)
+key_name = "barq-k8s-key"
+
+control_plane_instance_type = "c7i-flex.large"
+worker_instance_type        = "c7i-flex.large"
+
+db_instance_class = "db.t3.micro"
+
+# Secrets are NOT set here. Export them instead:
+#   export TF_VAR_db_password='<strong-password>'
+#   export TF_VAR_elasticache_auth_token='<token>'   # only if enable_elasticache = true
+
+# Optional bonus: managed Redis (ElastiCache). Keep false for the core deployment.
+enable_elasticache = false

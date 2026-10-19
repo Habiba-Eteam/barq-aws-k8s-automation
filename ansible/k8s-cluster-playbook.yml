@@ -1,0 +1,70 @@
+
+# 1) Preflight: Wait for SSH and cloud-init on new EC2 instances
+- name: Preflight
+  hosts: k8s
+  gather_facts: false
+  tasks:
+    - name: Wait for SSH
+      ansible.builtin.wait_for_connection:
+        timeout: 300
+
+    - name: Wait for cloud-init (avoids apt lock errors)
+      ansible.builtin.command: cloud-init status --wait
+      changed_when: false
+      failed_when: false
+
+# 2) Prepare all Kubernetes nodes
+- name: Prepare all nodes
+  hosts: k8s
+  handlers:
+    - name: Restart containerd
+      ansible.builtin.service:
+        name: containerd
+        state: restarted
+  tasks:
+    - ansible.builtin.import_tasks: tasks/common.yml
+    - ansible.builtin.import_tasks: tasks/containerd.yml
+    - ansible.builtin.import_tasks: tasks/kube_packages.yml
+
+# 3) Initialize the Kubernetes control plane
+- name: Initialize control plane
+  hosts: control_plane
+  tasks:
+    - ansible.builtin.import_tasks: tasks/control_plane.yml
+
+# 4) Join worker nodes to the Kubernetes cluster
+- name: Join workers
+  hosts: workers
+  tasks:
+    - ansible.builtin.import_tasks: tasks/worker.yml
+
+# 5) Verify the Kubernetes cluster
+- name: Verify cluster
+  hosts: control_plane
+  tasks:
+    - name: Wait for exactly two Kubernetes nodes to register
+      ansible.builtin.command: kubectl get nodes --no-headers
+      environment:
+        KUBECONFIG: /etc/kubernetes/admin.conf
+      register: registered_nodes
+      until: registered_nodes.rc == 0 and (registered_nodes.stdout_lines | length) == 2
+      retries: 30
+      delay: 10
+      changed_when: false
+
+    - name: Wait for both Kubernetes nodes to become Ready
+      ansible.builtin.command: kubectl wait --for=condition=Ready nodes --all --timeout=300s
+      environment:
+        KUBECONFIG: /etc/kubernetes/admin.conf
+      changed_when: false
+
+    - name: Show nodes
+      ansible.builtin.command: kubectl get nodes -o wide
+      environment:
+        KUBECONFIG: /etc/kubernetes/admin.conf
+      register: nodes
+      changed_when: false
+
+    - name: Print nodes
+      ansible.builtin.debug:
+        var: nodes.stdout_lines

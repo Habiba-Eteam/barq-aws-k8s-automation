@@ -1,0 +1,27 @@
+
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+
+metadata:
+  name: barq
+  namespace: argocd
+
+spec:
+  project: default
+
+  source:
+    repoURL: https://github.com/habiba-eteam/barq-aws-k8s-automation.git
+    targetRevision: main
+    path: k8s/app
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: default
+
+  syncPolicy:
+    automated:
+      enabled: true
+      prune: false
+      selfHeal: true
+    syncOptions:
+      - Prune=false
